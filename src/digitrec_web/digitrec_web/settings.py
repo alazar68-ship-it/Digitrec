@@ -84,3 +84,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Digit recognition model artifact directory
 DIGITREC_ARTIFACT_DIR = Path(_env("DIGITREC_ARTIFACT_DIR", str(REPO_ROOT / "artifacts"))).resolve()
+ALLOWED_HOSTS = [
+    "lazarsoft.hu",
+    "www.lazarsoft.hu",
+]
