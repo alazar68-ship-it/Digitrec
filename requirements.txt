@@ -1,0 +1,8 @@
+Django==5.1.5
+# Torch wheels are platform-specific; install the build that matches your environment.
+# Examples:
+# - CPU: pip install torch
+# - CUDA: see https://pytorch.org/get-started/locally/
+torch>=2.3,<3
+numpy>=1.26,<3
+torchvision>=0.18,<1

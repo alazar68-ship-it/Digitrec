@@ -1,0 +1,8 @@
+{
+  "arch": "mlp",
+  "hidden_sizes": [
+    128,
+    64
+  ],
+  "dropout": 0.1
+}

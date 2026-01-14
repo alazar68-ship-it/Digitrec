@@ -1,0 +1,431 @@
+{% load static %}
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Szám felismerés</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2b;
+      --text: #e7eefc;
+      --muted: #a7b4d0;
+      --accent: #4aa3ff;
+      --border: #22304d;
+      --ok: #36c88a;
+      --bad: #ff6b6b;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --accent: #2563eb;
+        --border: #e2e8f0;
+        --ok: #16a34a;
+        --bad: #dc2626;
+      }
+    }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans";
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+    }
+    .header .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+    .card h2 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .canvasWrap {
+      display: grid;
+      gap: 10px;
+    }
+    canvas#draw {
+      width: 360px;
+      height: 360px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #000;
+      touch-action: none;
+      image-rendering: pixelated;
+    }
+
+    .miniCanvas {
+      width: 96px;
+      height: 96px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #000;
+      image-rendering: pixelated;
+      display: block;
+      justify-self: center;
+    }
+    .vizGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 980px) {
+      .vizGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .vizGrid { grid-template-columns: 1fr; }
+    }
+    .vizTile {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+    .vizLabel {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .vizHint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .layerGrid {
+      --cell: 7px;
+      display: grid;
+      gap: 1px;
+      width: max-content;
+      justify-self: center;
+    }
+    .layerCell {
+      width: var(--cell);
+      height: var(--cell);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .layerCell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      opacity: var(--a, 0);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      user-select: none;
+    }
+    button:active { transform: translateY(1px); }
+    button.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .result {
+      min-height: 120px;
+    }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>Szám felismerés</h1>
+        <p class="sub">Rajzolj egy számjegyet, a predikció automatikusan frissül.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Rajzoló felület</h2>
+
+        <div class="canvasWrap">
+          <canvas id="draw" width="280" height="280" aria-label="Digit canvas"></canvas>
+
+          <div class="buttons">
+            <button id="clear" class="primary" type="button">Törlés</button>
+            <span class="hint">Bal gomb + húzás. Vastag ecset; MNIST-stílus.</span>
+          </div>
+
+          <form id="predictForm"
+                hx-post="{% url 'ui_predict' %}"
+                hx-trigger="canvas-changed"
+                hx-target="#resultPanel"
+                hx-swap="innerHTML"
+                hx-sync="this:replace">
+            {% csrf_token %}
+            <input type="hidden" name="pixels_json" id="pixels_json" value="[]" />
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Eredmény</h2>
+        <div id="resultPanel" class="result">
+          {% include 'digits/_prediction_fragment.html' %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('draw');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const form = document.getElementById('predictForm');
+      const pixelsInput = document.getElementById('pixels_json');
+
+      const off = document.createElement('canvas');
+      off.width = 28;
+      off.height = 28;
+      const offCtx = off.getContext('2d', { willReadFrequently: true });
+
+      let drawing = false;
+      let last = null;
+      let pending = false;
+      let lastSent = 0;
+
+      function _draw28(canvasEl, values, mode) {
+        if (!canvasEl) return;
+        if (!Array.isArray(values) || values.length !== 28*28) {
+          // Ha valamiért nincs érvényes adat (pl. out-of-order HTMX swap),
+          // ne töröljük a canvas-t: maradjon a legutóbbi stabil kép.
+          return;
+        }
+
+        const c = canvasEl.getContext('2d', { willReadFrequently: true });
+        c.imageSmoothingEnabled = false;
+
+        const img = c.createImageData(28, 28);
+        for (let i = 0; i < 28*28; i++) {
+          const v = Math.max(0, Math.min(1, Number(values[i]) || 0));
+          let r, g, b;
+          if (mode === 'sal') {
+            // Narancsos hőtérkép: fekete -> sötét -> világos.
+            r = Math.round(255 * v);
+            g = Math.round(140 * v);
+            b = 0;
+          } else {
+            const k = Math.round(255 * v);
+            r = k; g = k; b = k;
+          }
+          img.data[i*4 + 0] = r;
+          img.data[i*4 + 1] = g;
+          img.data[i*4 + 2] = b;
+          img.data[i*4 + 3] = 255;
+        }
+        c.putImageData(img, 0, 0);
+      }
+
+      function _renderExplain(panel) {
+        if (!panel) return;
+        const dataEl = panel.querySelector('#explainData');
+        if (!dataEl) return;
+        let pre = [];
+        let sal = [];
+        try { pre = JSON.parse(dataEl.dataset.preprocessed || '[]'); } catch (_) { pre = []; }
+        try { sal = JSON.parse(dataEl.dataset.saliency || '[]'); } catch (_) { sal = []; }
+
+        _draw28(panel.querySelector('#prep28'), pre, 'pre');
+        _draw28(panel.querySelector('#sal28'), sal, 'sal');
+      }
+
+      function reset() {
+        ctx.save();
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        schedulePredict(true);
+      }
+
+      function drawLine(a, b) {
+        ctx.save();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 20;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function pos(evt) {
+        const r = canvas.getBoundingClientRect();
+        const x = (evt.clientX - r.left) * (canvas.width / r.width);
+        const y = (evt.clientY - r.top) * (canvas.height / r.height);
+        return { x, y };
+      }
+
+      function down(evt) {
+        drawing = true;
+        last = pos(evt);
+      }
+
+      function move(evt) {
+        if (!drawing) return;
+        const p = pos(evt);
+        drawLine(last, p);
+        last = p;
+        schedulePredict(false);
+      }
+
+      function up() {
+        drawing = false;
+        last = null;
+        schedulePredict(true);
+      }
+
+      function computePixels() {
+        offCtx.save();
+        offCtx.imageSmoothingEnabled = true;
+        offCtx.clearRect(0,0,off.width,off.height);
+        offCtx.drawImage(canvas, 0, 0, off.width, off.height);
+        offCtx.restore();
+
+        const img = offCtx.getImageData(0,0,off.width,off.height);
+        const data = img.data;
+        const out = new Array(28*28);
+
+        for (let i = 0; i < out.length; i++) {
+          const r = data[i*4];
+          // fekete háttér + fehér digit -> r/255 már MNIST-szerű.
+          out[i] = r / 255;
+        }
+
+        return out;
+      }
+
+      function dispatch() {
+        const pixels = computePixels();
+        pixelsInput.value = JSON.stringify(pixels);
+
+        // HTMX esetén a trigger a legmegbízhatóbb. Fallback: natív event + fetch.
+        if (window.htmx && typeof window.htmx.trigger === 'function') {
+          window.htmx.trigger(form, 'canvas-changed');
+          return;
+        }
+
+        form.dispatchEvent(new Event('canvas-changed'));
+
+        // Ha a htmx nincs betöltve vagy blokkolt, frissítsünk fetch-csel.
+        const target = document.getElementById('resultPanel');
+        const csrf = form.querySelector('input[name=csrfmiddlewaretoken]')?.value || '';
+
+        fetch(form.getAttribute('hx-post'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'X-CSRFToken': csrf,
+          },
+          body: new URLSearchParams({ pixels_json: pixelsInput.value }).toString(),
+        }).then(r => r.text()).then(html => {
+          target.innerHTML = html;
+          _renderExplain(target);
+        }).catch(() => { /* csendes fallback */ });
+      }
+
+      function schedulePredict(force) {
+        const now = Date.now();
+        const minInterval = 250;
+
+        if (force) {
+          dispatch();
+          lastSent = now;
+          pending = false;
+          return;
+        }
+
+        if (pending) return;
+        if (now - lastSent < minInterval) {
+          pending = true;
+          setTimeout(() => {
+            pending = false;
+            dispatch();
+            lastSent = Date.now();
+          }, minInterval);
+          return;
+        }
+
+        dispatch();
+        lastSent = now;
+      }
+
+      document.getElementById('clear').addEventListener('click', reset);
+
+      document.body.addEventListener('htmx:afterSwap', (evt) => {
+        const t = evt?.detail?.target;
+        if (t && t.id === 'resultPanel') {
+          _renderExplain(t);
+        }
+      });
+
+      canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); down(e); });
+      canvas.addEventListener('pointermove', move);
+      canvas.addEventListener('pointerup', up);
+      canvas.addEventListener('pointercancel', up);
+
+      reset();
+    })();
+  </script>
+</body>
+</html>

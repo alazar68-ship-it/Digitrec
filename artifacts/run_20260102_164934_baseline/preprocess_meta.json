@@ -1,0 +1,9 @@
+{
+  "image_size": [
+    28,
+    28
+  ],
+  "flatten": true,
+  "value_range": "0..1",
+  "normalization": "x = uint8/255"
+}

@@ -1,0 +1,8 @@
+{
+  "train_loss": 0.058763803479453876,
+  "test_loss": 0.05951682055422238,
+  "test_accuracy": 0.981,
+  "epochs": 8,
+  "samples_train": 63000,
+  "samples_test": 7000
+}

@@ -1,0 +1,27 @@
+{
+  "training": {
+    "data_dir": "data",
+    "artifacts_dir": "artifacts",
+    "seed": 1337,
+    "epochs": 8,
+    "batch_size": 128,
+    "lr": 0.001,
+    "hidden_sizes": [
+      128,
+      64
+    ],
+    "dropout": 0.1,
+    "device": "auto",
+    "num_workers": 0,
+    "log_level": "INFO",
+    "mnist_mirrors": [
+      "https://ossci-datasets.s3.amazonaws.com/mnist/",
+      "https://azureopendatastorage.blob.core.windows.net/mnist/",
+      "http://yann.lecun.com/exdb/mnist/"
+    ]
+  },
+  "export": {
+    "tag": "baseline",
+    "include_training_report": true
+  }
+}

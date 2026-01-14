@@ -1,0 +1,81 @@
+{% load l10n %}
+{% if error %}
+  <div style="color: var(--bad); font-weight: 650;">Hiba: {{ error }}</div>
+{% elif probs %}
+  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+    <div style="font-size:42px; font-weight:800; letter-spacing:1px;">{{ pred_digit }}</div>
+    <div style="color: var(--muted);">valószínűségek + rejtett szintek</div>
+  </div>
+
+  <div style="margin: 10px 0 14px 0;">
+    <div style="display:grid; gap:6px;">
+      {% for row in probs %}
+        <div style="display:grid; grid-template-columns: 22px 1fr 56px; align-items:center; gap:10px;">
+          <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco; color: var(--muted);">{{ row.digit }}</div>
+          <div style="height:10px; border:1px solid var(--border); border-radius:999px; overflow:hidden;">
+            <div style="height:10px; width: {{ row.pct_css }}%; background: var(--accent); opacity: 0.55;"></div>
+          </div>
+          <div style="text-align:right; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco; color: var(--muted);">
+            {{ row.prob|floatformat:3 }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="margin: 10px 0 14px 0;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px;">
+      <div style="font-size:13px; font-weight:650;">Mi látszik a modellnek?</div>
+      <div style="color: var(--muted); font-size:12px;">Rejtett rétegek · 28×28 + saliency</div>
+    </div>
+
+    {% if has_explain %}
+      <div id="explainData" data-preprocessed="{{ preprocessed_json|escapejs }}" data-saliency="{{ saliency_json|escapejs }}" style="display:none;"></div>
+    {% endif %}
+
+    <div class="vizGrid">
+      {% if has_explain %}
+        <div class="vizTile">
+          <div class="vizLabel">Előfeldolgozott 28×28</div>
+          <canvas id="prep28" hx-preserve class="miniCanvas" width="28" height="28" aria-label="Preprocessed 28x28"></canvas>
+        </div>
+        <div class="vizTile">
+          <div class="vizLabel">Saliency heatmap</div>
+          <canvas id="sal28" hx-preserve class="miniCanvas" width="28" height="28" aria-label="Saliency 28x28"></canvas>
+        </div>
+      {% endif %}
+
+      {% if layers %}
+        {% with l1=layers.0 l2=layers.1 %}
+          <div class="vizTile">
+            <div class="vizLabel">Layer {{ l1.idx }}</div>
+            <div class="layerGrid" style="grid-template-columns: repeat({{ l1.cols }}, var(--cell));">
+              {% for cell in l1.cells %}
+                <div class="layerCell" title="{{ cell.v|floatformat:3 }}" style="--a: {{ cell.alpha_css }};"></div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="vizTile">
+            <div class="vizLabel">Layer {{ l2.idx }}</div>
+            <div class="layerGrid" style="grid-template-columns: repeat({{ l2.cols }}, var(--cell));">
+              {% for cell in l2.cells %}
+                <div class="layerCell" title="{{ cell.v|floatformat:3 }}" style="--a: {{ cell.alpha_css }};"></div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endwith %}
+      {% endif %}
+    </div>
+
+    {% if has_explain %}
+      <div class="vizHint">
+        Az előfeldolgozott kép az a 28×28-as digit, amit a modell ténylegesen megkap. A saliency térkép világosabb részei azok a pixelek,
+        amelyek a legerősebben hozzájárultak a kiválasztott osztályhoz. A Layer 1 és Layer 2 rácsok a rejtett neuronok aktivációit mutatják.
+      </div>
+    {% else %}
+      <div class="vizHint">A Layer 1 és Layer 2 rácsok a rejtett neuronok aktivációit mutatják az aktuális rajz alapján.</div>
+    {% endif %}
+  </div>
+{% else %}
+  <div style="color: var(--muted);">Rajzolj egy számjegyet a bal oldalon.</div>
+{% endif %}
