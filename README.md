@@ -22,7 +22,7 @@ pip install -e .
 pip install -r requirements-dev.txt  # optional, tests
 ```
 
-**CUDA / GPU note**
+***CUDA / GPU note***
 
 If you want PyTorch to use your NVIDIA GPU, install a CUDA-enabled build of **both** `torch` and `torchvision` (example for cu130):
 
@@ -35,7 +35,6 @@ You can verify GPU support with:
 ```bash
 python -c "import torch; print(torch.cuda.is_available()); print(torch.version.cuda)"
 ```
-
 
 ### (2) Train & export
 
@@ -58,7 +57,7 @@ python src/digitrec_web/manage.py migrate
 python src/digitrec_web/manage.py runserver
 ```
 
-Open: http://127.0.0.1:8000/
+## Open: localhost:8000 in your browser
 
 ## Tests
 
