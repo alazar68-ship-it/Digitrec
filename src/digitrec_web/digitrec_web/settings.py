@@ -88,4 +88,6 @@ DIGITREC_ARTIFACT_DIR = Path(_env("DIGITREC_ARTIFACT_DIR", str(REPO_ROOT / "arti
 ALLOWED_HOSTS = [
     "lazarsoft.hu",
     "www.lazarsoft.hu",
+    "127.0.0.1", 
+    "localhost"
 ]
