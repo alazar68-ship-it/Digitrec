@@ -7,7 +7,7 @@ A repository két komponensből áll:
 
 ## Quickstart
 
-### 1) Install
+### (1) Install
 
 ```bash
 python -m venv .venv
@@ -37,14 +37,14 @@ python -c "import torch; print(torch.cuda.is_available()); print(torch.version.c
 ```
 
 
-### 2) Train & export
+### (2) Train & export
 
 ```bash
 digitrec train --config configs/train_default.json
 # Output: path to the artifact directory (e.g. artifacts/run_YYYYmmdd_HHMMSS_baseline)
 ```
 
-### 3) Run the web UI
+### (3) Run the web UI
 
 Set the exported artifact directory:
 
