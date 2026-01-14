@@ -20,7 +20,7 @@ if not SECRET_KEY:
 
 DEBUG = _env("DJANGO_DEBUG", "0") not in {"0", "false", "False"}
 
-ALLOWED_HOSTS = [h.strip() for h in _env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver").split(",") if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in _env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,lazarsoft.hu,www.lazarsoft.hu").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -85,9 +85,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Digit recognition model artifact directory
 DIGITREC_ARTIFACT_DIR = Path(_env("DIGITREC_ARTIFACT_DIR", str(REPO_ROOT / "artifacts"))).resolve()
-ALLOWED_HOSTS = [
-    "lazarsoft.hu",
-    "www.lazarsoft.hu",
-    "127.0.0.1", 
-    "localhost"
-]
